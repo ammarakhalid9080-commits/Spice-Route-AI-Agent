@@ -1,0 +1,8 @@
+﻿day,opening_time,closing_time,is_open
+Monday,09:00,22:00,True
+Tuesday,09:00,22:00,True
+Wednesday,09:00,22:00,True
+Thursday,09:00,22:00,True
+Friday,09:00,23:00,True
+Saturday,10:00,23:00,True
+Sunday,10:00,22:00,True

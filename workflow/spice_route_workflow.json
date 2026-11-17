@@ -1,0 +1,410 @@
+{
+  "name": "Spice Route Guest Reservation Agent",
+  "nodes": [
+    {
+      "parameters": {
+        "httpMethod": "POST",
+        "path": "spice-route-reservation",
+        "options": {}
+      },
+      "type": "n8n-nodes-base.webhook",
+      "typeVersion": 2.1,
+      "position": [
+        0,
+        0
+      ],
+      "id": "53349d57-83c2-4cab-ad6e-f6b9c73e104b",
+      "name": "Webhook",
+      "webhookId": "c4d8ec31-038b-4fce-abd1-cd6cd600c137"
+    },
+    {
+      "parameters": {
+        "conditions": {
+          "options": {
+            "caseSensitive": true,
+            "leftValue": "",
+            "typeValidation": "strict",
+            "version": 3
+          },
+          "conditions": [
+            {
+              "id": "17f555b7-773c-4d10-bf0f-9f8bd45bbea0",
+              "leftValue": "={{$json.body.guest_name}}",
+              "rightValue": "is not empty",
+              "operator": {
+                "type": "string",
+                "operation": "notEmpty",
+                "singleValue": true
+              }
+            },
+            {
+              "id": "8fd3bd62-2dd8-4c7b-84ce-e6b176d946dd",
+              "leftValue": "={{$json.body.guest_message}}",
+              "rightValue": "is not empty",
+              "operator": {
+                "type": "string",
+                "operation": "notEmpty",
+                "singleValue": true
+              }
+            },
+            {
+              "id": "8bc55958-dcfc-400d-98ae-fc23c2aa5a9c",
+              "leftValue": "={{ Number($json.body.party_size) }}",
+              "rightValue": 1,
+              "operator": {
+                "type": "number",
+                "operation": "gte"
+              }
+            },
+            {
+              "id": "71486324-4492-4dea-bd3f-f22a12347dd2",
+              "leftValue": "={{ Number($json.body.party_size) }}",
+              "rightValue": 10,
+              "operator": {
+                "type": "number",
+                "operation": "lte"
+              }
+            }
+          ],
+          "combinator": "and"
+        },
+        "options": {}
+      },
+      "type": "n8n-nodes-base.if",
+      "typeVersion": 2.3,
+      "position": [
+        208,
+        0
+      ],
+      "id": "e2694d49-9ecd-4dbb-b41a-a7a9a6d81048",
+      "name": "If"
+    },
+    {
+      "parameters": {
+        "method": "POST",
+        "url": "http://127.0.0.1:5001/menu/search",
+        "sendBody": true,
+        "specifyBody": "json",
+        "jsonBody": "={\n  \"item_name\": \"Chicken Biryani\"\n}",
+        "options": {}
+      },
+      "type": "n8n-nodes-base.httpRequest",
+      "typeVersion": 4.4,
+      "position": [
+        1280,
+        32
+      ],
+      "id": "60b83913-40e2-42c5-a203-a90e48cbfd99",
+      "name": "HTTP Request"
+    },
+    {
+      "parameters": {
+        "method": "POST",
+        "url": "http://127.0.0.1:5001/menu/dietary-check",
+        "sendBody": true,
+        "specifyBody": "json",
+        "jsonBody": "{\n  \"item_name\": \"Fresh Juice\",\n  \"requirement\": \"Vegan\"\n}",
+        "options": {}
+      },
+      "type": "n8n-nodes-base.httpRequest",
+      "typeVersion": 4.4,
+      "position": [
+        1424,
+        80
+      ],
+      "id": "47d53c45-6099-42ad-b25a-478e58ff9e9a",
+      "name": "HTTP Request1"
+    },
+    {
+      "parameters": {
+        "promptType": "define",
+        "text": "={{$json.body.guest_message}}",
+        "options": {
+          "systemMessage": "You are the AI Restaurant Assistant for Spice Route Restaurant.\n\nYour responsibilities:\n1. Answer guest questions politely.\n2. Provide menu information using the available menu tool.\n3. Check dietary requirements using the dietary check tool.\n4. Never invent menu items or prices.\n5. Ask for missing reservation details.\n6. Follow reservation rules: minimum 1 guest, maximum 10 guests.\n7. Be friendly, clear, and professional."
+        }
+      },
+      "type": "@n8n/n8n-nodes-langchain.agent",
+      "typeVersion": 3.1,
+      "position": [
+        416,
+        0
+      ],
+      "id": "d7bec316-a8fe-4247-ac09-a1e7f9506357",
+      "name": "AI Agent",
+      "retryOnFail": true
+    },
+    {
+      "parameters": {
+        "modelName": "models/gemini-3.5-flash",
+        "options": {}
+      },
+      "type": "@n8n/n8n-nodes-langchain.lmChatGoogleGemini",
+      "typeVersion": 1,
+      "position": [
+        288,
+        208
+      ],
+      "id": "937ab90f-8508-434c-ae5f-a192a401e9b0",
+      "name": "Google Gemini Chat Model",
+      "retryOnFail": true,
+      "waitBetweenTries": 5000,
+      "credentials": {
+        "googlePalmApi": {
+          "id": "MlTmhLiwaRsod6fH",
+          "name": "Google Gemini(PaLM) Api account"
+        }
+      }
+    },
+    {
+      "parameters": {
+        "toolDescription": "Search the Spice Route restaurant menu by item name and return its price, category and dietary tags.",
+        "method": "POST",
+        "url": "http://127.0.0.1:5001/menu/search",
+        "sendBody": true,
+        "specifyBody": "json",
+        "jsonBody": "={{ /*n8n-auto-generated-fromAI-override*/ $fromAI('JSON', `Menu item name requested by guest`, 'json') }}",
+        "options": {}
+      },
+      "type": "n8n-nodes-base.httpRequestTool",
+      "typeVersion": 4.4,
+      "position": [
+        576,
+        208
+      ],
+      "id": "ff22b042-cb21-421b-a1e3-f7a8413d05ed",
+      "name": "HTTP Request2"
+    },
+    {
+      "parameters": {
+        "toolDescription": "Search the Spice Route restaurant menu by item name and return its price, category and dietary tags.",
+        "method": "POST",
+        "url": "http://127.0.0.1:5001/menu/search",
+        "sendBody": true,
+        "bodyParameters": {
+          "parameters": [
+            {
+              "name": "item_name",
+              "value": "={{$fromAI('item_name', 'Menu item name requested by guest')}}"
+            }
+          ]
+        },
+        "options": {}
+      },
+      "type": "n8n-nodes-base.httpRequestTool",
+      "typeVersion": 4.4,
+      "position": [
+        672,
+        304
+      ],
+      "id": "30f1b880-d76c-4e5a-a898-b2e5c7e17722",
+      "name": "HTTP Request3"
+    },
+    {
+      "parameters": {
+        "operation": "append",
+        "documentId": {
+          "__rl": true,
+          "value": "1GAiYFYnuCi91oDn4g5J4Aap3wBpub7ZjdVtzaDgNu34",
+          "mode": "list",
+          "cachedResultName": "Spice Route Guest Inquiries",
+          "cachedResultUrl": "https://docs.google.com/spreadsheets/d/1GAiYFYnuCi91oDn4g5J4Aap3wBpub7ZjdVtzaDgNu34/edit?usp=drivesdk"
+        },
+        "sheetName": {
+          "__rl": true,
+          "value": "Sheet1",
+          "mode": "name"
+        },
+        "columns": {
+          "mappingMode": "defineBelow",
+          "value": {},
+          "matchingColumns": [],
+          "schema": [],
+          "attemptToConvertTypes": false,
+          "convertFieldsToString": false
+        },
+        "options": {}
+      },
+      "type": "n8n-nodes-base.googleSheets",
+      "typeVersion": 4.7,
+      "position": [
+        1136,
+        0
+      ],
+      "id": "74319b59-2a18-495f-90f1-8d1b8e70f966",
+      "name": "Append row in sheet",
+      "credentials": {
+        "googleSheetsOAuth2Api": {
+          "id": "X3b2b2V9JCJ9FjeC",
+          "name": "Google Sheets account"
+        }
+      },
+      "disabled": true
+    },
+    {
+      "parameters": {
+        "method": "POST",
+        "url": "http://127.0.0.1:5000/api/inquiries",
+        "sendBody": true,
+        "bodyParameters": {
+          "parameters": [
+            {
+              "name": "guest_name",
+              "value": "={{$('Webhook').item.json.body.guest_name}}"
+            },
+            {
+              "name": "guest_message",
+              "value": "={{$('Webhook').item.json.body.guest_message}}"
+            },
+            {
+              "name": "party_size",
+              "value": "={{ Number(String($('Webhook').item.json.body.party_size).trim()) }}"
+            },
+            {
+              "name": "status",
+              "value": "completed"
+            }
+          ]
+        },
+        "options": {}
+      },
+      "type": "n8n-nodes-base.httpRequest",
+      "typeVersion": 4.4,
+      "position": [
+        912,
+        144
+      ],
+      "id": "53d6c2f7-14fa-420f-94dc-683e14fc8ab1",
+      "name": "HTTP Request4"
+    }
+  ],
+  "pinData": {
+    "Append row in sheet": [
+      {
+        "json": {
+          "name": "First item",
+          "code": 1
+        }
+      },
+      {
+        "json": {
+          "name": "Second item",
+          "code": 2
+        }
+      }
+    ]
+  },
+  "connections": {
+    "Webhook": {
+      "main": [
+        [
+          {
+            "node": "If",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "If": {
+      "main": [
+        [
+          {
+            "node": "AI Agent",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "HTTP Request1": {
+      "main": [
+        [
+          {
+            "node": "HTTP Request",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "AI Agent": {
+      "main": [
+        [
+          {
+            "node": "HTTP Request4",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Google Gemini Chat Model": {
+      "ai_languageModel": [
+        [
+          {
+            "node": "AI Agent",
+            "type": "ai_languageModel",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "HTTP Request2": {
+      "ai_tool": [
+        [
+          {
+            "node": "AI Agent",
+            "type": "ai_tool",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "HTTP Request3": {
+      "ai_tool": [
+        [
+          {
+            "node": "AI Agent",
+            "type": "ai_tool",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Append row in sheet": {
+      "main": [
+        [
+          {
+            "node": "HTTP Request1",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "HTTP Request4": {
+      "main": [
+        [
+          {
+            "node": "Append row in sheet",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    }
+  },
+  "active": false,
+  "settings": {
+    "executionOrder": "v1",
+    "binaryMode": "separate",
+    "availableInMCP": false
+  },
+  "versionId": "bc02af4d-ccb5-41d4-8bc4-f96928e9a30c",
+  "meta": {
+    "templateCredsSetupCompleted": true,
+    "instanceId": "264c0c334757c6dd996991555c1e63580417eeffc7728ef017305923a65ce20f"
+  },
+  "id": "A1AsvV3rskq7ZIeT",
+  "tags": []
+}

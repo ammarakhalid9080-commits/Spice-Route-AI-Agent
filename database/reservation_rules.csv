@@ -1,0 +1,6 @@
+﻿rule_id,rule_name,rule_value,description
+1,minimum_party_size,1,Minimum guests per reservation
+2,maximum_party_size,10,Maximum guests per reservation
+3,advance_booking_days,30,Reservations can be made up to 30 days ahead
+4,cancellation_notice_hours,24,Cancellations should be made 24 hours in advance
+5,booking_required,True,Reservations are recommended

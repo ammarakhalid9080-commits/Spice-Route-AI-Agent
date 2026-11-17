@@ -1,0 +1,12 @@
+venv/
+__pycache__/
+*.pyc
+.env
+.env.*
+!.env.example
+client_secret*.json
+token.json
+
+Spice_Route_Submission.zip
+recording/
+database/guest_inquiries.csv
