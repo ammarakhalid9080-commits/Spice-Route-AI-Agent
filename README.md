@@ -258,5 +258,41 @@ The database also contains sample menu items, operating hours, and reservation r
 - Update the local network IP addresses in n8n HTTP Request nodes if the computer's IP address changes.
 
 ## 13. Project Objective
+## Task 2 – AI Agent Integration
+
+### Technologies Added
+- n8n Workflow Automation
+- Google Gemini API
+- Custom Python Tool
+- JSON Schema Validation
+
+### AI Agent Features
+- Answers restaurant menu and dietary questions.
+- Searches restaurant data using a custom Python tool.
+- Retrieves reservation rules.
+- Checks party size and restaurant operating hours.
+- Returns structured JSON responses.
+
+### Supported Python Tool Actions
+- `search_menu`
+- `get_reservation_rules`
+- `check_reservation`
+
+### Structured JSON Output
+The AI Agent returns:
+- `response` – Message for the guest.
+- `follow_up` – Boolean follow-up flag.
+- `action` – Action performed by the AI Agent.
+
+### Security
+Google Gemini API credentials are stored securely in n8n Credentials.
+
+### Testing
+- Vegan food search tested.
+- Gluten-free food search tested.
+- Reservation request for four guests on Monday at 20:00 tested.
+- Structured JSON output tested.
+
+**Note:** The system checks restaurant operating hours only. It does not confirm actual live table availability.
 
 The objective is to demonstrate how Python REST APIs, workflow automation, and an AI Agent can work together to automate restaurant guest inquiries, menu assistance, dietary checks, and inquiry management.
