@@ -71,8 +71,18 @@ def get_reservation_rules():
 
 
 def check_reservation(party_size, day, requested_time):
-    """Check party size, restaurant opening day, and operating hours."""
+    """Validate reservation details and restaurant operating hours."""
 
+    # Validate party size
+    try:
+        party_size = int(party_size)
+    except (TypeError, ValueError):
+        return {
+            "success": False,
+            "message": "Invalid party size. Please provide a whole number."
+        }
+
+    # Load reservation rules
     rules_data = get_reservation_rules()["reservation_rules"]
 
     minimum = int(rules_data["minimum_party_size"]["value"])
@@ -84,23 +94,50 @@ def check_reservation(party_size, day, requested_time):
             "message": f"Party size must be between {minimum} and {maximum}."
         }
 
+    # Validate requested time
+    try:
+        requested = datetime.strptime(
+            requested_time, "%H:%M"
+        ).time()
+    except (TypeError, ValueError):
+        return {
+            "success": False,
+            "message": (
+                "Invalid time format. Please use 24-hour HH:MM format, "
+                "for example 20:00."
+            )
+        }
+
+    # Validate weekday
+    if not isinstance(day, str):
+        return {
+            "success": False,
+            "message": "Please provide a full weekday name, such as Friday."
+        }
+
+    # Read operating hours
     with open(HOURS_FILE, "r", newline="", encoding="utf-8-sig") as file:
         hours = list(csv.DictReader(file))
 
     day_info = next(
-        (row for row in hours if row["day"].lower() == day.lower()),
+        (row for row in hours if row["day"].lower() == day.strip().lower()),
         None
     )
 
     if not day_info or day_info["is_open"].lower() != "true":
         return {
             "success": False,
-            "message": "Restaurant is closed on this day."
+            "message": "Restaurant is closed on this day. Please provide a full weekday name."
         }
 
-    requested = datetime.strptime(requested_time, "%H:%M").time()
-    opening = datetime.strptime(day_info["opening_time"], "%H:%M").time()
-    closing = datetime.strptime(day_info["closing_time"], "%H:%M").time()
+    # Check operating hours
+    opening = datetime.strptime(
+        day_info["opening_time"], "%H:%M"
+    ).time()
+
+    closing = datetime.strptime(
+        day_info["closing_time"], "%H:%M"
+    ).time()
 
     within_hours = opening <= requested < closing
 
@@ -132,5 +169,11 @@ if __name__ == "__main__":
     print("\nReservation Rules:")
     print(get_reservation_rules())
 
-    print("\nReservation Check:")
+    print("\nValid Reservation Test:")
     print(check_reservation(4, "Monday", "20:00"))
+
+    print("\nInvalid Time Test:")
+    print(check_reservation(4, "Friday", "8pm"))
+
+    print("\nInvalid Party Size Test:")
+    print(check_reservation("four", "Friday", "20:00"))
