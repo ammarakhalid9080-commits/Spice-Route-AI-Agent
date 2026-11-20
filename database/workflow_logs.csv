@@ -9,3 +9,5 @@ timestamp,execution_status,workflow_step,action,http_status,message
 2026-11-20T19:05:16,failure,Error Handling,error,400,The request could not be completed. Please try again.
 2026-11-20T19:09:13,failure,Error Handling,error,400,The request could not be completed. Please try again.
 2026-11-20T19:15:36,failure,Error Handling,error,400,The request could not be completed. Please try again.
+2026-11-20T19:58:50,success,Guest Inquiry,guest_inquiry,200,Guest inquiry processed successfully
+2026-11-20T20:04:08,failure,Error Handling,error,400,The request could not be completed. Please try again.
