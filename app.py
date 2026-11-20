@@ -10,9 +10,10 @@ DATABASE = Path(__file__).parent / "database"
 DATABASE.mkdir(exist_ok=True)
 
 CSV_FILE = DATABASE / "guest_inquiries.csv"
+LOG_FILE = DATABASE / "workflow_logs.csv"
 
 
-# Create CSV file with headings if it does not exist
+# Create guest inquiries CSV
 if not CSV_FILE.exists():
     with open(CSV_FILE, "w", newline="", encoding="utf-8") as file:
         writer = csv.writer(file)
@@ -21,6 +22,20 @@ if not CSV_FILE.exists():
             "guest_name",
             "guest_message",
             "party_size"
+        ])
+
+
+# Create workflow logs CSV
+if not LOG_FILE.exists():
+    with open(LOG_FILE, "w", newline="", encoding="utf-8") as file:
+        writer = csv.writer(file)
+        writer.writerow([
+            "timestamp",
+            "execution_status",
+            "workflow_step",
+            "action",
+            "http_status",
+            "message"
         ])
 
 
@@ -43,15 +58,12 @@ def receive_inquiry():
     guest_message = data.get("guest_message")
     party_size = data.get("party_size")
 
-    # Validate guest name
     if not isinstance(guest_name, str) or not guest_name.strip():
         errors.append("Guest name is required.")
 
-    # Validate guest message
     if not isinstance(guest_message, str) or not guest_message.strip():
         errors.append("Guest message is required.")
 
-    # Clean and validate party size
     if party_size is not None:
         try:
             party_size = int(str(party_size).strip())
@@ -62,28 +74,88 @@ def receive_inquiry():
         except (ValueError, TypeError):
             errors.append("Party size must be a valid number.")
 
-    # Return validation errors
     if errors:
         return jsonify({
             "success": False,
             "errors": errors
         }), 400
 
-    # Save valid inquiry in CSV
-    with open(CSV_FILE, "a", newline="", encoding="utf-8") as file:
-        writer = csv.writer(file)
+    try:
+        with open(CSV_FILE, "a", newline="", encoding="utf-8") as file:
+            writer = csv.writer(file)
+            writer.writerow([
+                datetime.now().isoformat(timespec="seconds"),
+                guest_name.strip(),
+                guest_message.strip(),
+                party_size
+            ])
 
-        writer.writerow([
-            datetime.now().isoformat(timespec="seconds"),
-            guest_name.strip(),
-            guest_message.strip(),
-            party_size
-        ])
+        return jsonify({
+            "success": True,
+            "message": "Guest inquiry received and saved successfully."
+        }), 200
 
-    return jsonify({
-        "success": True,
-        "message": "Guest inquiry received and saved successfully."
-    }), 200
+    except Exception:
+        app.logger.exception("Failed to save guest inquiry")
+        return jsonify({
+            "success": False,
+            "message": "Could not save guest inquiry."
+        }), 500
+
+
+# Workflow success and failure logging endpoint
+@app.route("/api/workflow-logs", methods=["POST"])
+def save_workflow_log():
+
+    data = request.get_json(silent=True) or {}
+
+    execution_status = data.get("execution_status")
+    workflow_step = data.get("workflow_step")
+    action = data.get("action")
+    http_status = data.get("http_status")
+    message = data.get("message")
+
+    if execution_status not in ["success", "failure"]:
+        return jsonify({
+            "success": False,
+            "error": "execution_status must be success or failure."
+        }), 400
+
+    if not all([
+        isinstance(workflow_step, str) and workflow_step.strip(),
+        isinstance(action, str) and action.strip(),
+        isinstance(message, str) and message.strip()
+    ]):
+        return jsonify({
+            "success": False,
+            "error": "workflow_step, action and message are required."
+        }), 400
+
+    timestamp = datetime.now().isoformat(timespec="seconds")
+
+    try:
+        with open(LOG_FILE, "a", newline="", encoding="utf-8") as file:
+            writer = csv.writer(file)
+            writer.writerow([
+                timestamp,
+                execution_status,
+                workflow_step.strip(),
+                action.strip(),
+                http_status if http_status is not None else "",
+                message.strip()
+            ])
+
+        return jsonify({
+            "success": True,
+            "message": "Workflow execution logged successfully."
+        }), 200
+
+    except Exception:
+        app.logger.exception("Failed to write workflow log")
+        return jsonify({
+            "success": False,
+            "error": "Could not save workflow log."
+        }), 500
 
 
 def read_csv_file(filename):
@@ -111,4 +183,8 @@ def get_reservation_rules():
 
 
 if __name__ == "__main__":
-    app.run(host="0.0.0.0", port=5000, debug=True)
+    app.run(
+        host="0.0.0.0",
+        port=5000,
+        debug=False
+    )
